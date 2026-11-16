@@ -4,6 +4,7 @@ import { getAuth } from "firebase-admin/auth";
 import { getFirestore } from "firebase-admin/firestore";
 
 const projectId = process.env.FIREBASE_PROJECT_ID;
+const credentialsJson = process.env.FIREBASE_SERVICE_ACCOUNT_JSON;
 const credentialsPath = process.env.GOOGLE_APPLICATION_CREDENTIALS;
 
 if (!projectId) {
@@ -12,11 +13,12 @@ if (!projectId) {
   );
 }
 
-// cert() loads a service account from a JSON file kept outside the repository.
-// When GOOGLE_APPLICATION_CREDENTIALS is not set, the Admin SDK falls back to
-// Application Default Credentials.
+// cert() loads a service account from an environment variable string or a JSON file.
+// When neither is set, the Admin SDK falls back to Application Default Credentials.
 let credential;
-if (credentialsPath) {
+if (credentialsJson) {
+  credential = cert(JSON.parse(credentialsJson));
+} else if (credentialsPath) {
   credential = cert(JSON.parse(readFileSync(credentialsPath, "utf8")));
 }
 

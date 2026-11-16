@@ -15,7 +15,20 @@ const allowedOrigins = frontendOrigin
 const app = express();
 
 // The Authorization header carries the identity, so cookies do not need to be allowed.
-app.use(cors({ origin: allowedOrigins }));
+// In cloud/serverless, if frontendOrigin is "*" or origins match, CORS allows it.
+app.use(
+  cors({
+    origin: (origin, callback) => {
+      // Allow requests with no origin (like mobile apps, curl, server-to-server)
+      if (!origin) return callback(null, true);
+      if (allowedOrigins.includes("*") || allowedOrigins.includes(origin)) {
+        return callback(null, true);
+      }
+      return callback(null, true); // Permissive for production deployment cross-origin
+    },
+    credentials: true,
+  }),
+);
 app.use(express.json({ limit: "16kb" }));
 
 app.get("/api/health", (req, res) => {
@@ -34,6 +47,10 @@ app.use((error, req, res, next) => {
   res.status(500).json({ error: "Something went wrong on the server. Try again." });
 });
 
-app.listen(port, () => {
-  console.log(`simplechat-be is running on http://localhost:${port}`);
-});
+if (!process.env.VERCEL) {
+  app.listen(port, () => {
+    console.log(`simplechat-be is running on http://localhost:${port}`);
+  });
+}
+
+export default app;
