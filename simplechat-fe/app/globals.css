@@ -1,0 +1,369 @@
+@import "tailwindcss";
+
+* { box-sizing: border-box; }
+
+html, body { height: 100%; }
+
+body {
+  margin: 0;
+  color: #18181b;
+  background: #ffffff;
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+button, input, select, textarea { font: inherit; }
+
+/* Every clickable control uses the pointer; disabled controls do not. */
+a, button, select, label:has(input[type="checkbox"]) { cursor: pointer; }
+button:disabled, select:disabled, input:disabled, textarea:disabled { cursor: not-allowed; }
+
+:focus-visible { outline: 3px solid #18181b; outline-offset: 2px; }
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+button {
+  min-height: 44px;
+  padding: 9px 14px;
+  border: 1px solid #a1a1aa;
+  border-radius: 5px;
+  background: #ffffff;
+  color: #18181b;
+  transition: background-color 120ms ease, border-color 120ms ease;
+}
+button:hover:not(:disabled) { background: #f4f4f5; }
+button:disabled { cursor: not-allowed; color: #52525b; background: #f4f4f5; border-color: #d4d4d8; }
+button.primary { background: #18181b; color: #ffffff; border-color: #18181b; }
+button.primary:hover:not(:disabled) { background: #3f3f46; }
+/* Aksi merusak memakai warna merah, tombol utama tetap hitam. */
+button.danger { color: #991b1b; border-color: #d4a3a3; background: #ffffff; }
+button.danger:hover:not(:disabled) { background: #fef2f2; }
+/* A disabled primary button keeps a text colour that passes contrast. */
+button.primary:disabled { background: #e4e4e7; color: #52525b; border-color: #d4d4d8; }
+
+input:not([type="checkbox"]):not([type="radio"]), textarea {
+  width: 100%;
+  min-width: 0;
+  min-height: 44px;
+  padding: 9px 11px;
+  border: 1px solid #a1a1aa;
+  border-radius: 5px;
+  background: #ffffff;
+  color: #18181b;
+}
+textarea { resize: vertical; }
+
+/* The placeholder colour is set so it stays above 4.5:1 against white. */
+::placeholder { color: #71717a; opacity: 1; }
+
+/* The checkbox keeps the browser default size instead of the text input style. */
+input[type="checkbox"] {
+  flex: none;
+  width: 16px;
+  height: 16px;
+  min-height: 16px;
+  padding: 0;
+  border: 0;
+  accent-color: #18181b;
+}
+
+h1, h2, p, ul, fieldset, legend { margin: 0; padding: 0; }
+ul { list-style: none; }
+
+.notice, .error {
+  margin: 0 0 20px;
+  padding: 12px 14px;
+  border: 1px solid #d4d4d8;
+  border-radius: 5px;
+  background: #fafafa;
+}
+.error { color: #991b1b; border-color: #d4a3a3; background: #fef2f2; }
+
+.subtitle { margin: 9px 0 0; color: #52525b; font-size: 14px; }
+
+.empty {
+  padding: 35px 24px;
+  border: 1px solid #d4d4d8;
+  color: #52525b;
+  text-align: center;
+}
+.empty strong { color: #18181b; }
+.empty p { margin: 8px 0 0; font-size: 14px; }
+.empty button { margin-top: 18px; }
+
+/* ---------- Login ---------- */
+
+.center-screen {
+  min-height: 100dvh;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+}
+.login-card {
+  width: min(100%, 400px);
+  padding: 28px;
+  border: 1px solid #d4d4d8;
+  background: #ffffff;
+}
+.login-card h1 { margin: 0; font-size: 26px; font-weight: 700; letter-spacing: -.02em; }
+.login-card .error { margin: 18px 0 0; }
+.login-button { width: 100%; margin-top: 22px; }
+
+/* ---------- Shell ---------- */
+
+.shell {
+  display: grid;
+  grid-template-columns: 272px minmax(0, 1fr);
+  height: 100dvh;
+}
+
+.sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  min-width: 0;
+  padding: 16px 12px;
+  background: #fafafa;
+  border-right: 1px solid #d4d4d8;
+  overflow-y: auto;
+}
+.sidebar-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.brand { margin: 0; font-size: 16px; font-weight: 700; letter-spacing: -.01em; }
+.sidebar-signout { min-height: 44px; padding: 8px 12px; font-size: 13px; }
+.sidebar-identity {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin: 0;
+  color: #52525b;
+  font-size: 13px;
+}
+.sidebar-identity strong { color: #18181b; }
+/* Aksi edit seperti tautan: target sentuh tetap 44px, tanpa kotak tombol. */
+.sidebar-edit {
+  flex: none;
+  min-height: 44px;
+  padding: 0 2px;
+  border: 0;
+  background: transparent;
+  color: #52525b;
+  font-size: 12px;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.sidebar-edit:hover:not(:disabled) { background: transparent; color: #18181b; }
+.sidebar-actions { display: grid; gap: 8px; }
+.sidebar-actions button { width: 100%; }
+.sidebar-list { min-width: 0; }
+
+/* ---------- Conversation list ---------- */
+
+.chat-list { display: grid; gap: 16px; }
+.list-heading {
+  margin: 0 0 6px;
+  padding: 0 10px;
+  font-size: 11px;
+  letter-spacing: .08em;
+  font-weight: 700;
+  color: #52525b;
+}
+.chat-row {
+  display: grid;
+  gap: 2px;
+  width: 100%;
+  min-height: 44px;
+  padding: 9px 10px;
+  border: 0;
+  border-bottom: 1px solid #e4e4e7;
+  border-radius: 0;
+  background: transparent;
+  text-align: left;
+}
+.chat-row:hover:not(:disabled) { background: #e4e4e7; }
+.chat-row-active { background: #18181b; color: #ffffff; border-bottom-color: #18181b; }
+.chat-row-active:hover:not(:disabled) { background: #3f3f46; }
+.chat-row-name { font-weight: 600; overflow-wrap: anywhere; }
+.chat-row-meta { font-size: 12px; color: #52525b; }
+.chat-row-active .chat-row-meta { color: #d4d4d8; }
+
+.list-status { margin: 0; padding: 12px 10px; color: #52525b; font-size: 13px; }
+.list-empty {
+  padding: 22px 14px;
+  border: 1px solid #d4d4d8;
+  color: #52525b;
+  text-align: center;
+}
+.list-empty strong { color: #18181b; }
+.list-empty p { margin: 6px 0 0; font-size: 13px; }
+
+/* ---------- Conversation window ---------- */
+
+.window-area { display: flex; min-width: 0; }
+.window { display: flex; flex-direction: column; flex: 1; min-width: 0; min-height: 0; }
+.window-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 20px;
+  border-bottom: 1px solid #d4d4d8;
+}
+.window-heading { flex: 1; min-width: 0; }
+.window-heading h2 { margin: 0; font-size: 17px; font-weight: 600; overflow-wrap: anywhere; }
+.window-subtitle { margin: 2px 0 0; font-size: 12px; color: #52525b; }
+.window-delete {
+  flex: none;
+  min-height: 44px;
+  padding: 8px 12px;
+  border-color: #d4a3a3;
+  color: #991b1b;
+  font-size: 13px;
+}
+.window-delete:hover:not(:disabled) { background: #fef2f2; }
+.back-button { display: none; }
+.window-error { margin: 0; border-radius: 0; border-left: 0; border-right: 0; }
+.window-placeholder { display: grid; place-items: center; padding: 24px; }
+
+.message-scroll { flex: 1; min-height: 0; overflow-y: auto; display: flex; flex-direction: column; }
+.message-scroll > .list-empty { margin: auto 0; }
+.messages { display: grid; gap: 10px; padding: 16px 20px; margin-top: auto; }
+.message { display: grid; gap: 3px; justify-items: start; }
+.message-own { justify-items: end; }
+.message-sender { font-size: 12px; font-weight: 600; color: #52525b; }
+.message-bubble {
+  max-width: min(72%, 560px);
+  padding: 9px 12px;
+  border: 1px solid #d4d4d8;
+  border-radius: 6px;
+  background: #fafafa;
+}
+.message-own .message-bubble { background: #18181b; border-color: #18181b; color: #ffffff; }
+.message-text { margin: 0; white-space: pre-wrap; overflow-wrap: anywhere; }
+.message-time {
+  display: block;
+  margin-top: 3px;
+  font-size: 11px;
+  color: #52525b;
+  font-variant-numeric: tabular-nums;
+}
+.message-own .message-time { color: #d4d4d8; }
+.message-day { justify-self: center; padding: 6px 0 2px; font-size: 11px; color: #52525b; }
+
+/* ---------- Composer ---------- */
+
+.composer { padding: 12px 16px; border-top: 1px solid #d4d4d8; background: #ffffff; }
+.composer-error { margin: 0 0 10px; }
+.composer-row { display: flex; align-items: flex-end; gap: 10px; }
+.composer-input { resize: none; max-height: 160px; overflow-y: auto; }
+.composer-send { flex: none; }
+
+/* ---------- Modal ---------- */
+
+dialog.modal[open] {
+  position: fixed;
+  inset: 0;
+  width: min(560px, calc(100vw - 32px));
+  max-width: none;
+  max-height: calc(100dvh - 32px);
+  margin: auto;
+  padding: 20px 24px;
+  overflow-y: auto;
+  border: 1px solid #a1a1aa;
+  border-radius: 8px;
+  background: #ffffff;
+  color: #18181b;
+  box-shadow: 0 20px 60px rgb(0 0 0 / 18%);
+}
+.modal::backdrop { background: rgb(24 24 27 / 55%); }
+.modal-heading {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 40px;
+  margin-bottom: 16px;
+  padding: 0 40px;
+}
+.modal-heading h2 { margin: 0; text-align: center; font-size: 20px; font-weight: 600; }
+/* Tombol tutup menempel di sudut dialog, tidak ada kolom kosong di kiri judul. */
+.close-button {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  font-size: 24px;
+  line-height: 1;
+}
+.close-button:hover:not(:disabled) { background: #f4f4f5; }
+.modal-description { margin: 0 0 14px; color: #52525b; font-size: 14px; }
+
+/* ---------- Group form and user picker ---------- */
+
+.group-form { display: grid; gap: 18px; }
+.group-form > label { display: grid; gap: 7px; font-size: 13px; font-weight: 600; }
+.group-form fieldset { border: 0; border-top: 1px solid #d4d4d8; padding: 16px 0 0; min-width: 0; }
+.group-form legend { font-size: 13px; font-weight: 600; padding: 0 12px 0 0; }
+.form-actions { display: flex; flex-wrap: wrap; gap: 10px; justify-content: flex-end; }
+
+/* Daftar pengguna memakai baris, bukan kotak input: tanpa border tebal di luar. */
+.picker-list { border: 1px solid #e4e4e7; border-radius: 5px; max-height: 300px; overflow-y: auto; }
+.picker-list li + li { border-top: 1px solid #e4e4e7; }
+.picker-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  min-height: 44px;
+  padding: 11px 12px;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: #18181b;
+  font-size: 14px;
+  font-weight: 400;
+  text-align: left;
+}
+button.picker-row:hover:not(:disabled) { background: #f4f4f5; }
+label.picker-row:hover { background: #f4f4f5; }
+.picker-row span { overflow-wrap: anywhere; }
+.picker-empty {
+  margin: 0;
+  padding: 16px;
+  border: 1px dashed #d4d4d8;
+  color: #52525b;
+  text-align: center;
+}
+
+/* ---------- Small screens ---------- */
+
+@media (max-width: 700px) {
+  .shell { grid-template-columns: 1fr; }
+  .shell[data-has-room="true"] .sidebar { display: none; }
+  .shell[data-has-room="false"] .window-area { display: none; }
+  .back-button { display: inline-flex; align-items: center; }
+  .messages { padding: 14px 12px; }
+  .message-bubble { max-width: 88%; }
+  .composer { padding: 10px 12px; }
+  .window-header { padding: 12px 14px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * { transition-duration: .01ms !important; }
+}
