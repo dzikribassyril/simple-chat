@@ -14,11 +14,11 @@ service cloud.firestore {
         && request.auth.token.firebase.sign_in_provider == 'google.com';
     }
 
-    // Only members of a chat may read the chat document and its messages.
-    function isChatMember(chatId) {
+    // Only members of a room may read the room document and its messages.
+    function isRoomMember(roomId) {
       return signedIn()
         && request.auth.uid in get(
-          /databases/$(database)/documents/chats/$(chatId)
+          /databases/$(database)/documents/rooms/$(roomId)
         ).data.memberIds;
     }
 
@@ -40,18 +40,18 @@ service cloud.firestore {
       allow delete: if managesAllProfiles();
     }
 
-    match /chats/{chatId} {
+    match /rooms/{roomId} {
 
       allow read: if signedIn()
         && request.auth.uid
           in resource.data.memberIds;
 
-      // Chats and messages are written by the backend through the Admin SDK.
+      // Rooms and messages are written by the backend through the Admin SDK.
       allow write: if false;
 
       match /messages/{messageId} {
 
-        allow read: if isChatMember(chatId);
+        allow read: if isRoomMember(roomId);
 
         allow write: if false;
       }
