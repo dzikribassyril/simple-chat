@@ -1,54 +1,71 @@
 import { useEffect, useState } from "react";
-import { subscribeMessages } from "@/lib/chats";
-import type { ChatMessage } from "@/lib/types";
+import { dbAdapter } from "@/lib/adapters";
+import type { Message } from "@/lib/types";
 
 type MessagesState = {
-  chatId: string;
-  messages: ChatMessage[];
+  roomId: string;
+  messages: Message[];
   loading: boolean;
   error: string;
 };
 
-export function useMessages(chatId: string | null) {
+export function useMessages(roomId: string | null) {
   const [state, setState] = useState<MessagesState>({
-    chatId: "",
+    roomId: "",
     messages: [],
     loading: true,
     error: "",
   });
 
   useEffect(() => {
-    if (!chatId) return;
+    if (!roomId) return;
 
     let active = true;
 
-    const unsubscribe = subscribeMessages(
-      chatId,
+    const unsubscribe = dbAdapter.subscribeMessages(
+      roomId,
       (messages) => {
-        if (active) setState({ chatId, messages, loading: false, error: "" });
+        if (active) setState({ roomId, messages, loading: false, error: "" });
       },
       () => {
         if (active) {
           setState({
-            chatId,
+            roomId,
             messages: [],
             loading: false,
-            error: "Could not load the messages. Check access permissions and reload the page.",
+            error: "Could not load messages. Check access permissions and reload page.",
           });
         }
       },
     );
 
+    // subscribeMessages sudah menangani realtime + fallback polling internal,
+    // jadi setInterval tambahan tidak diperlukan dan hanya menambah beban query.
     return () => {
       active = false;
       unsubscribe();
     };
-  }, [chatId]);
+  }, [roomId]);
 
-  if (!chatId) return { messages: [], loading: false, error: "" };
+  if (!roomId) {
+    return { messages: [], loading: false, error: "", refresh: async () => {} };
+  }
 
-  // Messages from the previous room are dropped as soon as the room changes.
-  if (state.chatId !== chatId) return { messages: [], loading: true, error: "" };
+  if (state.roomId !== roomId) {
+    return {
+      messages: [],
+      loading: true,
+      error: "",
+      refresh: () => dbAdapter.refreshMessages(roomId),
+    };
+  }
 
-  return { messages: state.messages, loading: state.loading, error: state.error };
+  return {
+    messages: state.messages,
+    loading: state.loading,
+    error: state.error,
+    refresh: roomId
+      ? () => dbAdapter.refreshMessages(roomId)
+      : async () => {},
+  };
 }

@@ -15,7 +15,7 @@ export function MessageInput({ busy, error, onSend }: MessageInputProps) {
     const trimmed = text.trim();
     if (!trimmed || busy) return;
 
-    // The text is cleared only after the backend confirms the message was saved.
+    // Kosongkan teks setelah backend berhasil menyimpan pesan.
     const delivered = await onSend(trimmed);
     if (delivered) setText("");
   }
@@ -26,7 +26,7 @@ export function MessageInput({ busy, error, onSend }: MessageInputProps) {
   }
 
   function handleKeyDown(event: KeyboardEvent<HTMLTextAreaElement>) {
-    // Enter sends the message, Shift+Enter inserts a new line.
+    // Enter mengirim pesan, Shift+Enter menambah baris baru
     if (event.key === "Enter" && !event.shiftKey) {
       event.preventDefault();
       void send();
@@ -34,7 +34,7 @@ export function MessageInput({ busy, error, onSend }: MessageInputProps) {
   }
 
   function handleInput(event: FormEvent<HTMLTextAreaElement>) {
-    // The textarea height follows its content so long lines are not cut off.
+    // Sesuaikan tinggi textarea dengan isi supaya teks tidak terpotong.
     const target = event.currentTarget;
     target.style.height = "auto";
     target.style.height = `${Math.min(target.scrollHeight, 160)}px`;

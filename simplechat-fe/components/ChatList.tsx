@@ -1,66 +1,57 @@
 "use client";
 
-import type { Chat, ChatUser } from "@/lib/types";
+import type { Room, Contact } from "@/lib/types";
 
-type ChatListProps = {
-  chats: Chat[];
-  users: ChatUser[];
+type RoomListProps = {
+  rooms: Room[];
+  users: Contact[];
   currentUid: string;
-  activeChatId: string | null;
+  activeRoomId: string | null;
   loading: boolean;
-  onSelect: (chatId: string) => void;
+  onSelect: (roomId: string) => void;
 };
 
-// The peer name is read from the users collection, as described in PRD section 4.3.
-export function resolveChatTitle(
-  chat: Chat,
-  users: ChatUser[],
+export function resolveRoomTitle(
+  room: Room,
+  users: Contact[],
   currentUid: string,
 ) {
-  if (chat.type === "group") return chat.name || "Untitled group";
+  if (room.type === "group") return room.name || "Untitled group";
 
-  const otherId = chat.memberIds.find((memberId) => memberId !== currentUid);
+  // Cari ID lawan bicara di daftar member, lalu ambil nama dari daftar users
+  const otherId = room.memberIds.find((memberId) => memberId !== currentUid);
   if (!otherId) return "Direct message";
 
   return users.find((user) => user.id === otherId)?.name || "Unnamed user";
 }
 
-export function ChatList({
-  chats,
+export function RoomList({
+  rooms,
   users,
   currentUid,
-  activeChatId,
+  activeRoomId,
   loading,
   onSelect,
-}: ChatListProps) {
+}: RoomListProps) {
   if (loading) {
     return <p className="list-status">Loading conversations...</p>;
   }
 
-  if (chats.length === 0) {
-    return (
-      <div className="list-empty">
-        <strong>No conversations yet</strong>
-        <p>Start a new chat or create a group to begin.</p>
-      </div>
-    );
-  }
-
-  const directChats = chats.filter((chat) => chat.type === "direct");
-  const groupChats = chats.filter((chat) => chat.type === "group");
+  const directRooms = rooms.filter((room) => room.type === "direct");
+  const groupRooms = rooms.filter((room) => room.type === "group");
 
   return (
-    <div className="chat-list">
-      {directChats.length > 0 && (
+    <div className="room-list">
+      {directRooms.length > 0 && (
         <section className="list-section">
           <h2 className="list-heading">Direct messages</h2>
           <ul>
-            {directChats.map((chat) => (
-              <ChatRow
-                key={chat.id}
-                chat={chat}
-                title={resolveChatTitle(chat, users, currentUid)}
-                active={chat.id === activeChatId}
+            {directRooms.map((room) => (
+              <RoomRow
+                key={room.id}
+                room={room}
+                title={resolveRoomTitle(room, users, currentUid)}
+                active={room.id === activeRoomId}
                 onSelect={onSelect}
               />
             ))}
@@ -68,16 +59,16 @@ export function ChatList({
         </section>
       )}
 
-      {groupChats.length > 0 && (
+      {groupRooms.length > 0 && (
         <section className="list-section">
           <h2 className="list-heading">Groups</h2>
           <ul>
-            {groupChats.map((chat) => (
-              <ChatRow
-                key={chat.id}
-                chat={chat}
-                title={resolveChatTitle(chat, users, currentUid)}
-                active={chat.id === activeChatId}
+            {groupRooms.map((room) => (
+              <RoomRow
+                key={room.id}
+                room={room}
+                title={resolveRoomTitle(room, users, currentUid)}
+                active={room.id === activeRoomId}
                 onSelect={onSelect}
               />
             ))}
@@ -88,25 +79,25 @@ export function ChatList({
   );
 }
 
-type ChatRowProps = {
-  chat: Chat;
+type RoomRowProps = {
+  room: Room;
   title: string;
   active: boolean;
-  onSelect: (chatId: string) => void;
+  onSelect: (roomId: string) => void;
 };
 
-function ChatRow({ chat, title, active, onSelect }: ChatRowProps) {
+function RoomRow({ room, title, active, onSelect }: RoomRowProps) {
   return (
     <li>
       <button
         type="button"
-        className={active ? "chat-row chat-row-active" : "chat-row"}
+        className={active ? "room-row room-row-active" : "room-row"}
         aria-current={active ? "true" : undefined}
-        onClick={() => onSelect(chat.id)}
+        onClick={() => onSelect(room.id)}
       >
-        <span className="chat-row-name">{title}</span>
-        {chat.type === "group" && (
-          <span className="chat-row-meta">{chat.memberIds.length} members</span>
+        <span className="room-row-name">{title}</span>
+        {room.type === "group" && (
+          <span className="room-row-meta">{room.memberIds.length} members</span>
         )}
       </button>
     </li>

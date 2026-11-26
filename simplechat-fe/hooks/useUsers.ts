@@ -1,10 +1,10 @@
 import { useEffect, useState } from "react";
-import { subscribeUsers } from "@/lib/users";
-import type { ChatUser } from "@/lib/types";
+import { dbAdapter } from "@/lib/adapters";
+import type { Contact } from "@/lib/types";
 
 type UsersState = {
   uid: string;
-  users: ChatUser[];
+  users: Contact[];
   loading: boolean;
   error: string;
 };
@@ -18,13 +18,11 @@ export function useUsers(uid: string | null) {
   });
 
   useEffect(() => {
-    // The subscription only opens once a session exists so Firestore does not
-    // reject the request.
     if (!uid) return;
 
     let active = true;
 
-    const unsubscribe = subscribeUsers(
+    const unsubscribe = dbAdapter.subscribeUsers(
       (users) => {
         if (active) setState({ uid, users, loading: false, error: "" });
       },
@@ -34,7 +32,7 @@ export function useUsers(uid: string | null) {
             uid,
             users: [],
             loading: false,
-            error: "Could not load the user directory. Check access permissions and reload the page.",
+            error: "Could not load user directory. Check access permissions and reload page.",
           });
         }
       },

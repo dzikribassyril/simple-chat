@@ -1,23 +1,18 @@
 import { useEffect, useState } from "react";
-import { onAuthStateChanged, type User as AuthUser } from "firebase/auth";
-import { auth } from "@/lib/firebase";
-
-type AuthState = {
-  user: AuthUser | null;
-  ready: boolean;
-};
+import { authAdapter } from "@/lib/adapters";
 
 export function useAuth() {
-  const [state, setState] = useState<AuthState>({ user: null, ready: false });
+  const [uid, setUid] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // The listener is attached in the browser and released when the component unmounts.
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      setState({ user, ready: true });
+    const unsubscribe = authAdapter.onAuthChange((userId) => {
+      setUid(userId);
+      setLoading(false);
     });
 
     return unsubscribe;
   }, []);
 
-  return { user: state.user, loading: !state.ready };
+  return { uid, user: uid, loading };
 }

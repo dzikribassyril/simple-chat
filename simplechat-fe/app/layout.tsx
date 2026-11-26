@@ -3,7 +3,7 @@ import "./globals.css";
 
 export const metadata: Metadata = {
   title: "SimpleChat App",
-  description: "Real-time chat prototype built on Firebase Authentication, Firestore, and Express",
+  description: "Real-time room prototype built on Firebase Authentication, Firestore, and Express",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {

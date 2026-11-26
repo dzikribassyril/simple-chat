@@ -2,10 +2,10 @@
 
 import { Modal } from "@/components/Modal";
 import { UserPicker } from "@/components/UserPicker";
-import type { ChatUser } from "@/lib/types";
+import type { Contact } from "@/lib/types";
 
-type StartChatModalProps = {
-  users: ChatUser[];
+type StartRoomModalProps = {
+  users: Contact[];
   busy: boolean;
   error: string;
   emptyMessage: string;
@@ -13,16 +13,16 @@ type StartChatModalProps = {
   onStart: (userId: string) => void;
 };
 
-export function StartChatModal({
+export function StartRoomModal({
   users,
   busy,
   error,
   emptyMessage,
   onClose,
   onStart,
-}: StartChatModalProps) {
+}: StartRoomModalProps) {
   return (
-    <Modal title="Start a chat" locked={busy} onClose={onClose}>
+    <Modal title="Start a room" locked={busy} onClose={onClose}>
       <p className="modal-description">
         Pick someone to talk to. The conversation is created by the backend.
       </p>
@@ -32,6 +32,7 @@ export function StartChatModal({
         mode="single"
         selectedIds={[]}
         onSelect={onStart}
+        disabled={busy}
         emptyMessage={emptyMessage}
       />
 

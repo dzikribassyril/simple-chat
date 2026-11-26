@@ -36,7 +36,7 @@ the send and create buttons to work.
 app/
 ├── page.tsx            # Redirects to /chat or /login
 ├── login/page.tsx      # Google sign-in page
-└── chat/page.tsx       # Chat dashboard
+└── chat/page.tsx       # Room dashboard
 components/
 ├── ChatList.tsx        # Direct chats and groups
 ├── ChatWindow.tsx      # Room header, message list, composer

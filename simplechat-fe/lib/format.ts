@@ -1,16 +1,24 @@
-import type { Timestamp } from "firebase/firestore";
+type TimestampLike = { toMillis(): number; toDate?(): Date };
 
-export function formatClock(timestamp: Timestamp | null) {
+export function formatClock(timestamp: TimestampLike | null) {
   if (!timestamp) return "";
-  return timestamp.toDate().toLocaleTimeString("en-GB", {
+  const date =
+    typeof timestamp.toDate === "function"
+      ? timestamp.toDate()
+      : new Date(timestamp.toMillis());
+  return date.toLocaleTimeString("en-GB", {
     hour: "2-digit",
     minute: "2-digit",
   });
 }
 
-export function formatDay(timestamp: Timestamp | null) {
+export function formatDay(timestamp: TimestampLike | null) {
   if (!timestamp) return "";
-  return timestamp.toDate().toLocaleDateString("en-GB", {
+  const date =
+    typeof timestamp.toDate === "function"
+      ? timestamp.toDate()
+      : new Date(timestamp.toMillis());
+  return date.toLocaleDateString("en-GB", {
     day: "numeric",
     month: "long",
     year: "numeric",

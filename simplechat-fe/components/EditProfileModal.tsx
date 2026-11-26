@@ -2,7 +2,7 @@
 
 import { useState, type FormEvent } from "react";
 import { Modal } from "@/components/Modal";
-import { MAX_DISPLAY_NAME } from "@/lib/users";
+import { MAX_DISPLAY_NAME } from "@/lib/types";
 
 type EditProfileModalProps = {
   currentName: string;
@@ -49,17 +49,12 @@ export function EditProfileModal({
             value={name}
             maxLength={MAX_DISPLAY_NAME}
             disabled={busy}
-            placeholder="How others see you"
             onChange={(event) => {
               setFormError("");
               setName(event.target.value);
             }}
           />
         </label>
-
-        <p className="modal-description">
-          This is the name other people see in the conversation list and next to your messages.
-        </p>
 
         {(formError || error) && (
           <p className="error" role="alert">

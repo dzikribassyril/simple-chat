@@ -1,18 +1,18 @@
 import { useEffect, useState } from "react";
-import { subscribeChats } from "@/lib/chats";
-import type { Chat } from "@/lib/types";
+import { dbAdapter } from "@/lib/adapters";
+import type { Room } from "@/lib/types";
 
-type ChatsState = {
+type RoomsState = {
   uid: string;
-  chats: Chat[];
+  rooms: Room[];
   loading: boolean;
   error: string;
 };
 
-export function useChats(uid: string | null) {
-  const [state, setState] = useState<ChatsState>({
+export function useRooms(uid: string | null) {
+  const [state, setState] = useState<RoomsState>({
     uid: "",
-    chats: [],
+    rooms: [],
     loading: true,
     error: "",
   });
@@ -22,33 +22,34 @@ export function useChats(uid: string | null) {
 
     let active = true;
 
-    const unsubscribe = subscribeChats(
+    const unsubscribe = dbAdapter.subscribeRooms(
       uid,
-      (chats) => {
-        if (active) setState({ uid, chats, loading: false, error: "" });
+      (rooms) => {
+        if (active) setState({ uid, rooms, loading: false, error: "" });
       },
       () => {
         if (active) {
           setState({
             uid,
-            chats: [],
+            rooms: [],
             loading: false,
-            error: "Could not load your conversations. Check access permissions and reload the page.",
+            error: "Could not load your conversations. Check access permissions and reload page.",
           });
         }
       },
     );
 
+    // subscribeRooms sudah menangani realtime + fallback polling internal,
+    // interval tambahan hanya menambah query berulang tanpa manfaat.
     return () => {
       active = false;
       unsubscribe();
     };
   }, [uid]);
 
-  if (!uid) return { chats: [], loading: false, error: "" };
+  if (!uid) return { rooms: [], loading: false, error: "" };
 
-  // Data belonging to the previous uid must not show while the new one loads.
-  if (state.uid !== uid) return { chats: [], loading: true, error: "" };
+  if (state.uid !== uid) return { rooms: [], loading: true, error: "" };
 
-  return { chats: state.chats, loading: state.loading, error: state.error };
+  return { rooms: state.rooms, loading: state.loading, error: state.error };
 }

@@ -1,4 +1,4 @@
-import { auth } from "@/lib/firebase";
+import { authAdapter } from "@/lib/adapters";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
 
@@ -12,18 +12,17 @@ export class ApiError extends Error {
   }
 }
 
-// Every request carries the ID token of the signed-in user.
 async function request<T>(
   method: "POST" | "DELETE",
   path: string,
   body?: unknown,
 ): Promise<T> {
-  const user = auth.currentUser;
-  if (!user) {
+  let token: string;
+  try {
+    token = await authAdapter.getToken();
+  } catch {
     throw new ApiError("Your session has expired. Please sign in again.", 401);
   }
-
-  const token = await user.getIdToken();
 
   let response: Response;
   try {
@@ -51,27 +50,27 @@ async function request<T>(
   return payload as T;
 }
 
-export function createDirectChat(recipientId: string) {
-  return request<{ chatId: string }>("POST", "/api/chats", {
+export function createDirectRoom(recipientId: string) {
+  return request<{ roomId: string }>("POST", "/api/rooms", {
     type: "direct",
     recipientId,
   });
 }
 
-export function createGroupChat(name: string, memberIds: string[]) {
-  return request<{ chatId: string }>("POST", "/api/chats", {
+export function createGroupRoom(name: string, memberIds: string[]) {
+  return request<{ roomId: string }>("POST", "/api/rooms", {
     type: "group",
     name,
     memberIds,
   });
 }
 
-export function sendMessage(chatId: string, text: string) {
-  return request<{ success: true; messageId: string }>("POST", `/api/chats/${chatId}/messages`, {
+export function sendMessage(roomId: string, text: string) {
+  return request<{ success: true; messageId: string }>("POST", `/api/rooms/${roomId}/messages`, {
     text,
   });
 }
 
-export function deleteChat(chatId: string) {
-  return request<{ success: true; deletedMessages: number }>("DELETE", `/api/chats/${chatId}`);
+export function deleteRoom(roomId: string) {
+  return request<{ success: true; deletedMessages: number }>("DELETE", `/api/rooms/${roomId}`);
 }

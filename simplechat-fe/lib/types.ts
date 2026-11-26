@@ -1,23 +1,23 @@
-import type { Timestamp } from "firebase/firestore";
+export const MAX_DISPLAY_NAME = 100;
 
-// Shape of a document in the users collection.
-export type ChatUser = {
+export type Contact = {
   id: string;
   name: string;
 };
 
-// Shape of a document in the chats collection.
-export type Chat = {
+export type Room = {
   id: string;
   type: "direct" | "group";
   name?: string;
   memberIds: string[];
 };
 
-// Shape of a document in the messages subcollection.
-export type ChatMessage = {
+export type Message = {
   id: string;
   senderId: string;
   text: string;
-  createdAt: Timestamp | null;
+  createdAt: {
+    toMillis(): number;
+    toDate(): Date;
+  } | null;
 };

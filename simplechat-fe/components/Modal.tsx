@@ -15,10 +15,10 @@ export function Modal({ title, locked = false, onClose, children }: ModalProps) 
 
   useEffect(() => {
     const dialog = ref.current;
-    // showModal() opens the native dialog and disables the rest of the page.
+    // Buka dialog dan nonaktifkan interaksi dengan halaman di belakangnya.
     if (dialog && !dialog.open) dialog.showModal();
 
-    // The function returned by useEffect runs when the component unmounts.
+    // Tutup dialog saat komponen dilepas.
     return () => {
       if (dialog?.open) dialog.close();
     };
@@ -30,7 +30,7 @@ export function Modal({ title, locked = false, onClose, children }: ModalProps) 
       className="modal"
       aria-labelledby={titleId}
       onCancel={(event) => {
-        // Escape triggers the cancel event; a locked dialog must not close.
+        // Cegah Escape menutup dialog saat dialog sedang dikunci.
         event.preventDefault();
         if (!locked) onClose();
       }}

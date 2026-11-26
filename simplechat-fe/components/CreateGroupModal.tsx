@@ -3,10 +3,10 @@
 import { useState, type FormEvent } from "react";
 import { Modal } from "@/components/Modal";
 import { UserPicker } from "@/components/UserPicker";
-import type { ChatUser } from "@/lib/types";
+import type { Contact } from "@/lib/types";
 
 type CreateGroupModalProps = {
-  users: ChatUser[];
+  users: Contact[];
   busy: boolean;
   error: string;
   emptyMessage: string;
@@ -44,7 +44,7 @@ export function CreateGroupModal({
       return;
     }
 
-    // The creator joins the group automatically, so two other members are enough.
+    // Pembuat otomatis masuk grup, jadi cukup pilih dua anggota lain.
     if (selected.length < 2) {
       setFormError(
         "Pick at least two other members. A group needs at least three people including you.",

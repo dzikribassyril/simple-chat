@@ -1,10 +1,10 @@
 "use client";
 
 import { formatClock } from "@/lib/format";
-import type { ChatMessage } from "@/lib/types";
+import type { Message } from "@/lib/types";
 
 type MessageBubbleProps = {
-  message: ChatMessage;
+  message: Message;
   own: boolean;
   senderName: string;
   showSender: boolean;
