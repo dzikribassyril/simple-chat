@@ -1,6 +1,7 @@
+// Semua endpoint room: Create room, kirim pesan, hapus room via DatabaseAdapter.
 import { Router } from "express";
-import { FieldValue } from "firebase-admin/firestore";
-import { db } from "../firebase.js";
+import { createHash } from "node:crypto";
+import { dbAdapter } from "../adapters/index.js";
 import { requireAuth } from "../middleware/auth.js";
 
 const router = Router();
@@ -8,21 +9,7 @@ const router = Router();
 const MAX_GROUP_NAME = 60;
 const MAX_MESSAGE_LENGTH = 4000;
 
-// Firestore caps a single batch request at 100 documents, so the read is chunked.
-async function findMissingUsers(ids) {
-  const missing = [];
-
-  for (let index = 0; index < ids.length; index += 100) {
-    const chunk = ids.slice(index, index + 100);
-    const docs = await db.getAll(...chunk.map((id) => db.doc(`users/${id}`)));
-    docs.forEach((doc, position) => {
-      if (!doc.exists) missing.push(chunk[position]);
-    });
-  }
-
-  return missing;
-}
-
+// POST /api/rooms -> bikin room baru (direct atau group).
 router.post("/", requireAuth, async (req, res) => {
   const uid = req.uid;
   const body = req.body ?? {};
@@ -31,29 +18,39 @@ router.post("/", requireAuth, async (req, res) => {
   if (type === "direct") {
     const recipientId = typeof body.recipientId === "string" ? body.recipientId.trim() : "";
 
-    if (!recipientId) {
-      res.status(400).json({ error: "recipientId is required." });
-      return;
-    }
-
-    if (recipientId === uid) {
-      res.status(400).json({ error: "You cannot start a chat with yourself." });
-      return;
-    }
-
-    // The recipient must have a profile so the room never holds a made-up member.
-    const recipient = await db.doc(`users/${recipientId}`).get();
-    if (!recipient.exists) {
+    // Penerima harus punya profil, biar room nggak berisi user yang nggak ada.
+    if (!recipientId || !(await dbAdapter.userExists(recipientId))) {
       res.status(404).json({ error: "The recipient was not found." });
       return;
     }
 
-    const chat = await db.collection("chats").add({
-      type: "direct",
-      memberIds: [uid, recipientId],
-    });
+    // Id room dibikin dari dua uid yang sudah diurutkan. Jadi satu pasangan
+    // cuma punya satu room jadi misal si user dobel klik ga bakal duplikat.
+    const sortedIds = [uid, recipientId].sort();
+    const roomId =
+      process.env.BACKEND_PROVIDER?.toLowerCase() === "appwrite"
+        ? `dm_${createHash("sha256").update(sortedIds.join("\0")).digest("hex").slice(0, 32)}`
+        : `dm_${sortedIds.join("_")}`;
 
-    res.status(201).json({ chatId: chat.id });
+    try {
+      await dbAdapter.createRoomWithId(roomId, { type: "direct", memberIds: [uid, recipientId] });
+    } catch (error) {
+      const isDuplicate =
+        error?.code === 6 ||
+        error?.code === "already-exists" ||
+        error?.code === 409 ||
+        error?.status === 409;
+      if (!isDuplicate) throw error;
+      const existing = await dbAdapter.getRoom(roomId);
+      if (existing?.type !== "direct" || !Array.isArray(existing.memberIds) ||
+          existing.memberIds.length !== 2 || !existing.memberIds.includes(uid) ||
+          !existing.memberIds.includes(recipientId)) {
+        res.status(409).json({ error: "Room ID conflicts with an existing conversation." });
+        return;
+      }
+    }
+
+    res.status(201).json({ roomId });
     return;
   }
 
@@ -71,10 +68,11 @@ router.post("/", requireAuth, async (req, res) => {
     }
 
     const requested = Array.isArray(body.memberIds) ? body.memberIds : [];
-    // A Set drops members picked twice, and the creator joins the group automatically.
+    // Pakai Set biar anggota yang kepilih dua kali cuma dihitung sekali, dan pembuat grup otomatis jadi anggota.
     const memberIds = [...new Set(requested.filter((id) => typeof id === "string" && id.trim()))]
       .filter((id) => id !== uid);
 
+    // Minimal 3 orang: pembuat + 2 anggota lain.
     if (memberIds.length < 2) {
       res.status(400).json({
         error: "A group needs at least three people, including the creator.",
@@ -82,32 +80,36 @@ router.post("/", requireAuth, async (req, res) => {
       return;
     }
 
-    const missing = await findMissingUsers(memberIds);
+    // Cek dulu semua anggotanya benar-benar ada.
+    const missing = await dbAdapter.findMissingUsers(memberIds);
     if (missing.length > 0) {
       res.status(404).json({ error: "Some group members were not found." });
       return;
     }
 
-    const chat = await db.collection("chats").add({
+    // Bikin dokumen room baru lewat database adapter.
+    const roomId = await dbAdapter.createRoom({
       type: "group",
       name,
       memberIds: [uid, ...memberIds],
     });
 
-    res.status(201).json({ chatId: chat.id });
+    res.status(201).json({ roomId });
     return;
   }
 
+  // Selain dua tipe di atas, tolak.
   res.status(400).json({ error: 'type must be "direct" or "group".' });
 });
 
-router.post("/:chatId/messages", requireAuth, async (req, res) => {
+// POST /api/rooms/:roomId/messages -> kirim pesan ke sebuah room.
+router.post("/:roomId/messages", requireAuth, async (req, res) => {
   const uid = req.uid;
-  const chatId = req.params.chatId;
+  const roomId = req.params.roomId;
   const text = typeof req.body?.text === "string" ? req.body.text.trim() : "";
 
-  if (!chatId) {
-    res.status(400).json({ error: "chatId is required." });
+  if (!roomId) {
+    res.status(400).json({ error: "roomId is required." });
     return;
   }
 
@@ -121,82 +123,65 @@ router.post("/:chatId/messages", requireAuth, async (req, res) => {
     return;
   }
 
-  const chatRef = db.doc(`chats/${chatId}`);
-
-  let chat;
+  let room;
   try {
-    chat = await chatRef.get();
+    room = await dbAdapter.getRoom(roomId);
   } catch {
-    res.status(400).json({ error: "chatId is not valid." });
+    // Kalau id-nya bukan format yang valid, adapter akan error.
+    res.status(400).json({ error: "roomId is not valid." });
     return;
   }
 
-  if (!chat.exists) {
+  if (!room) {
     res.status(404).json({ error: "The conversation was not found." });
     return;
   }
 
-  // The Admin SDK bypasses Security Rules, so membership is checked here.
-  const memberIds = chat.get("memberIds");
+  // Keanggotaan harus dicek manual.
+  const memberIds = room.memberIds;
   const isMember = Array.isArray(memberIds) && memberIds.includes(uid);
   if (!isMember) {
     res.status(403).json({ error: "You are not a member of this conversation." });
     return;
   }
 
-  const message = await chatRef.collection("messages").add({
+  const messageId = await dbAdapter.addMessage(roomId, {
     senderId: uid,
     text,
-    createdAt: FieldValue.serverTimestamp(),
-  });
+  }, memberIds);
 
-  res.status(201).json({ success: true, messageId: message.id });
+  res.status(201).json({ success: true, messageId });
 });
 
-router.delete("/:chatId", requireAuth, async (req, res) => {
+// DELETE /api/rooms/:roomId -> hapus room beserta pesan-pesannya.
+router.delete("/:roomId", requireAuth, async (req, res) => {
   const uid = req.uid;
-  const chatId = req.params.chatId;
+  const roomId = req.params.roomId;
 
-  const chatRef = db.doc(`chats/${chatId}`);
-
-  let chat;
+  let room;
   try {
-    chat = await chatRef.get();
+    room = await dbAdapter.getRoom(roomId);
   } catch {
-    res.status(400).json({ error: "chatId is not valid." });
+    res.status(400).json({ error: "roomId is not valid." });
     return;
   }
 
-  if (!chat.exists) {
+  if (!room) {
     res.status(404).json({ error: "The conversation was not found." });
     return;
   }
 
-  // Only a member may delete the conversation.
-  const memberIds = chat.get("memberIds");
+  // Cuma anggota room yang boleh menghapus.
+  const memberIds = room.memberIds;
   const isMember = Array.isArray(memberIds) && memberIds.includes(uid);
   if (!isMember) {
     res.status(403).json({ error: "You are not a member of this conversation." });
     return;
   }
 
-  // Messages are removed in batches because Firestore caps a batch at 500 writes.
-  const messagesRef = chatRef.collection("messages");
-  let deletedMessages = 0;
-
-  for (;;) {
-    const snapshot = await messagesRef.limit(400).get();
-    if (snapshot.empty) break;
-
-    const batch = db.batch();
-    snapshot.docs.forEach((messageDoc) => batch.delete(messageDoc.ref));
-    await batch.commit();
-    deletedMessages += snapshot.size;
-  }
-
-  await chatRef.delete();
+  const deletedMessages = await dbAdapter.deleteRoom(roomId);
 
   res.status(200).json({ success: true, deletedMessages });
 });
 
-export { router as chatsRouter };
+export { router as roomsRouter };

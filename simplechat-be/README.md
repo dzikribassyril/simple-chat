@@ -1,73 +1,67 @@
-# simplechat-be
+# SimpleChat Backend - Firebase Setup Guide
 
-The SimpleChat backend. Express for Firebase.
+## 📌 Prerequisites
+1. Firebase CLI installed (`npm install -g firebase-tools`)
+2. Service account JSON file for `explore-rnd-2` project
+3. Node.js environment
 
-The backend only writes to Firestore: it creates conversations and stores messages. It uses
-the Firebase Admin SDK, so it bypasses Security Rules and must verify the ID token and the
-chat membership on its own.
+## 🔧 Setup Steps
 
-Written in plain JavaScript with ES Modules (`"type": "module"`), as required by PRD
-section 14.
-
-## Running
-
+### 1. Make Firebase CLI use correct project
 ```bash
-npm install
-cp .env.example .env
+firebase use explore-rnd-2
+```
+
+### 2. Create Firestore Database
+Go to [Firebase Console](https://console.firebase.google.com/) → Project `explore-rnd-2` → **Databases & Storage** → **Firestore** → **Create Database**
+- Location: `us-central1` (or any available region)
+- Mode: **Test mode** (for development)
+
+### 3. Seed Initial Data
+```bash
+cd simplechat-be
+node scripts/seed-firestore.mjs
+```
+
+### 4. Verify Data
+Check in Firebase Console → Firestore → Data to see:
+- 4 users (Dzikri, Sarah, Reza, Maya)
+- 2 direct chats with 5+ messages each
+- 1 group chat with 5 messages
+
+### 5. Start Server
+```bash
 npm run dev
 ```
 
-The server runs on `http://localhost:3001`.
-
-## Environment
-
-| Variable | Value |
-|---|---|
-| `PORT` | Backend port, defaults to `3001` |
-| `FRONTEND_ORIGIN` | Origin allowed by CORS, defaults to `http://localhost:3000` |
-| `FIREBASE_PROJECT_ID` | Firebase project ID |
-| `GOOGLE_APPLICATION_CREDENTIALS` | Absolute path to the service account JSON file |
-
-`GOOGLE_APPLICATION_CREDENTIALS` is optional when the backend runs on Google Cloud with
-Application Default Credentials. Never commit the service account file.
-
-## Endpoints
-
-Every POST endpoint expects the header `Authorization: Bearer <firebase id token>`. The
-token is fetched in the browser with `user.getIdToken()`.
-
-| Method | Endpoint | Purpose |
-|---|---|---|
-| `GET` | `/api/health` | Backend health check |
-| `POST` | `/api/chats` | Create a direct chat or a group |
-| `POST` | `/api/chats/:chatId/messages` | Send a message |
-
-### `POST /api/chats`
-
-Direct chat:
-
-```json
-{ "type": "direct", "recipientId": "uid_budi" }
+## 📂 Project Structure
+```
+simplechat-be/
+├── src/
+│   ├── adapters/
+│   │   ├── firebase.js        # Firebase Firestore adapter
+│   │   └── appwrite.js        # Appwrite adapter (optional)
+│   ├── routes/
+│   │   ├── chats.js
+│   │   └── profile.js
+│   └── server.js              # Express server
+└── scripts/
+    └── seed-firestore.mjs     # Seeding script
 ```
 
-Group chat:
-
-```json
-{ "type": "group", "name": "Study group", "memberIds": ["uid_budi", "uid_andi"] }
+## 🔐 Environment Variables (.env)
+```
+PORT=3001
+FRONTEND_ORIGIN=http://localhost:3000
+BACKEND_PROVIDER=appwrite
+FIREBASE_PROJECT_ID=explore-firestore-rnd
+GOOGLE_APPLICATION_CREDENTIALS=C:\Users\Asani\.config\simplechat\service-account.json
 ```
 
-Response: `{ "chatId": "chat_001" }`.
-
-The backend adds the creator UID automatically, rejects a group with fewer than three
-members, and rejects members whose profile does not exist in the `users` collection.
-
-### `POST /api/chats/:chatId/messages`
-
-```json
-{ "text": "Hello everyone" }
+## 🧪 Testing
+To test authentication:
+```bash
+curl -X POST http://localhost:3001/api/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"email": "test@example.com", "password": "password123"}'
 ```
-
-Response: `{ "success": true, "messageId": "message_001" }`.
-
-The backend rejects an empty message, a message that is too long, and a sender who is not a
-member of the conversation.
